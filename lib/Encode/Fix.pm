@@ -45,7 +45,8 @@ sub learn_recoding_process {
     for my $depth (1..$maxdepth) {
         my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
         while (my @steps = $iter->()) {
-            if (fix_core($source, \@steps) eq $target) {
+            no warnings 'uninitialized';
+            if (eval {fix_core($source, \@steps)} eq $target) {
                 return \@steps;
             }
         }
