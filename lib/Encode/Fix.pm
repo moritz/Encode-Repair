@@ -3,7 +3,7 @@ our $VERSION = '0.0.1';
 use strict;
 use warnings;
 
-our @EXPORT_OK = qw(fix_double);
+our @EXPORT_OK = qw(fix_double learn_recoding fix_encoding);
 use Exporter qw(import);
 use Encode qw(encode decode);
 use Algorithm::Loops qw(NestedLoops);
@@ -13,7 +13,7 @@ my %subs = (
     decode  => \&decode,
 );
 
-sub fix_core {
+sub fix_encoding {
     my ($str, $actions) = @_;
     for (my $i = 0; $i < @$actions; $i += 2) {
         my $type     = $actions->[$i];
@@ -28,14 +28,14 @@ sub fix_double {
     my ($buf, $options) = @_;
     my $via = 'ISO-8859-1';
     $via = $options->{via} if $options && exists $options->{via};
-    fix_core($buf, [
+    fix_encoding($buf, [
             'decode', 'UTF-8',
             'encode', $via,
             'decode', 'UTF-8',
     ]);
 }
 
-sub learn_recoding_process {
+sub learn_recoding {
     my %args        = @_;
     my $source      = $args{from};
     my $target      = $args{to};
@@ -46,7 +46,7 @@ sub learn_recoding_process {
         my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
         while (my @steps = $iter->()) {
             no warnings 'uninitialized';
-            if (eval {fix_core($source, \@steps)} eq $target) {
+            if (eval {fix_encoding($source, \@steps)} eq $target) {
                 return \@steps;
             }
         }
