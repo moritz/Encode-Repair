@@ -14,6 +14,7 @@ my $build = Module::Build->new(
     requires => {
         'perl'               => '5.008001',
         'Test::More'         => 0,
+        'Algorithm::Loops'   => 0,
         'Encode'             => 0,
         'strict'             => 0,
         'warnings'           => 0,

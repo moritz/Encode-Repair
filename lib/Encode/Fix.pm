@@ -6,6 +6,7 @@ use warnings;
 our @EXPORT_OK = qw(fix_double);
 use Exporter qw(import);
 use Encode qw(encode decode);
+use Algorithm::Loops qw(NestedLoops);
 
 my %subs = (
     encode  => \&encode,
@@ -14,8 +15,10 @@ my %subs = (
 
 sub fix_core {
     my ($str, $actions) = @_;
-    for my $a (@$actions) {
-        my ($type, $encoding) = @$a;
+    for (my $i = 0; $i < @$actions; $i += 2) {
+        my $type     = $actions->[$i];
+        my $encoding = $actions->[$i+1];
+        no warnings 'utf8';
         $str = $subs{$type}->($encoding, $str);
     }
     $str;
@@ -25,13 +28,29 @@ sub fix_double {
     my ($buf, $options) = @_;
     my $via = 'ISO-8859-1';
     $via = $options->{via} if $options && exists $options->{via};
-    fix_core($buf,
-        [
-            ['decode', 'UTF-8'],
-            ['encode', $via],
-            ['decode', 'UTF-8'],
-        ]
-    );
+    fix_core($buf, [
+            'decode', 'UTF-8',
+            'encode', $via,
+            'decode', 'UTF-8',
+    ]);
+}
+
+sub learn_recoding_process {
+    my %args        = @_;
+    my $source      = $args{from};
+    my $target      = $args{to};
+    my $encodings   = $args{encodings};
+    my $maxdepth    = $args{depth} || 5;
+
+    for my $depth (1..$maxdepth) {
+        my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
+        while (my @steps = $iter->()) {
+            if (fix_core($source, \@steps) eq $target) {
+                return \@steps;
+            }
+        }
+    }
+    return;
 }
 
 1;
@@ -79,10 +98,17 @@ Latin-1, and can be overridden with the C<via> option:
 
     my $fixed = fix_double($buffer, {via => 'ISO-8859-2' });
 
-It expects a byte string as input, and returns a decoded text string.
+It expects an octet string as input, and returns a decoded character string.
 
 =back
 
+=head1 Further Reading
+
+This document tries to stick to the terminology introduced in the L<Encode>
+module.
+
+If you want to learn more about the way text is encoded and how perl handles
+that, take a look at L<http://perlgeek/en/article/encodings-and-unicode>.
 
 =head1 LICENSE AND COPYRIGHT
 
