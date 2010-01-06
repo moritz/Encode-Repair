@@ -7,13 +7,31 @@ our @EXPORT_OK = qw(fix_double);
 use Exporter qw(import);
 use Encode qw(encode decode);
 
+my %subs = (
+    encode  => \&encode,
+    decode  => \&decode,
+);
+
+sub fix_core {
+    my ($str, $actions) = @_;
+    for my $a (@$actions) {
+        my ($type, $encoding) = @$a;
+        $str = $subs{$type}->($encoding, $str);
+    }
+    $str;
+}
+
 sub fix_double {
     my ($buf, $options) = @_;
     my $via = 'ISO-8859-1';
     $via = $options->{via} if $options && exists $options->{via};
-    $buf = decode('UTF-8', $buf);
-    $buf = encode($via, $buf);
-    return decode('UTF-8', $buf);
+    fix_core($buf,
+        [
+            ['decode', 'UTF-8'],
+            ['encode', $via],
+            ['decode', 'UTF-8'],
+        ]
+    );
 }
 
 1;
