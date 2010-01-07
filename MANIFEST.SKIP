@@ -19,8 +19,9 @@
 \bBuild.bat$
 \b_build
 
-# Avoid Devel::Cover generated files
+# Avoid Devel::Cover and Devel::NYTProf generated files
 \bcover_db
+\bnytprof\b
 
 # Avoid temp and backup files.
 ~$
