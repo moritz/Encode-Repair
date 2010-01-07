@@ -4,7 +4,7 @@ use Test::More tests => 7;
 use Encode qw(encode);
 
 use charnames qw(:full);
-use Encode::Fix qw(learn_recoding fix_encoding);
+use Encode::Repair qw(learn_recoding repair_encoding);
 
 is_deeply learn_recoding( from => '1', to => '1', encodings => ['Latin-1']),
           [], 'empty array if from eq to';
@@ -38,9 +38,9 @@ $res = learn_recoding(
 
 #is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-1', 'decode', 'UTF-8'], 
 #          'Can detect double encoding via Latin-1';
-is fix_encoding("small ae: \xc3\x83\xc2\xa4", $res),
+is repair_encoding("small ae: \xc3\x83\xc2\xa4", $res),
     "small ae: \N{LATIN SMALL LETTER A WITH DIAERESIS}",
-    'Can fix double encoding via Latin-1 with autodetection';
+    'Can repair double encoding via Latin-1 with autodetection';
 
 $res = learn_recoding(
         from        => "beta: \xc4\xaa\xc2\xb2",
@@ -50,6 +50,6 @@ $res = learn_recoding(
 
 is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-7', 'decode', 'UTF-8'],
           'Can detect double encoding via Latin-7';
-is fix_encoding("beta: \xc4\xaa\xc2\xb2", $res),
+is repair_encoding("beta: \xc4\xaa\xc2\xb2", $res),
    "beta: \N{GREEK SMALL LETTER BETA}",
-    'Can fix double encoding via Latin-7 with autodetection';
+    'Can repair double encoding via Latin-7 with autodetection';

@@ -1,9 +1,9 @@
-package Encode::Fix;
+package Encode::Repair;
 our $VERSION = '0.0.1';
 use strict;
 use warnings;
 
-our @EXPORT_OK = qw(fix_double learn_recoding fix_encoding);
+our @EXPORT_OK = qw(repair_double learn_recoding repair_encoding);
 use Exporter qw(import);
 use Encode qw(encode decode);
 use Algorithm::Loops qw(NestedLoops);
@@ -13,7 +13,7 @@ my %subs = (
     decode  => \&decode,
 );
 
-sub fix_encoding {
+sub repair_encoding {
     my ($str, $actions) = @_;
     for (my $i = 0; $i < @$actions; $i += 2) {
         my $type     = $actions->[$i];
@@ -24,11 +24,11 @@ sub fix_encoding {
     $str;
 }
 
-sub fix_double {
+sub repair_double {
     my ($buf, $options) = @_;
     my $via = 'ISO-8859-1';
     $via = $options->{via} if $options && exists $options->{via};
-    fix_encoding($buf, [
+    repair_encoding($buf, [
             'decode', 'UTF-8',
             'encode', $via,
             'decode', 'UTF-8',
@@ -47,7 +47,7 @@ sub learn_recoding {
         my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
         while (my @steps = $iter->()) {
             no warnings 'uninitialized';
-            if (eval {fix_encoding($source, \@steps)} eq $target) {
+            if (eval {repair_encoding($source, \@steps)} eq $target) {
                 return \@steps;
             }
         }
@@ -61,36 +61,37 @@ sub learn_recoding {
 
 =head1 NAME
 
-Encode::Fix - Repair wrongly encoded text strings
+Encode::Repair - Repair wrongly encoded text strings
 
 =head1 SYNOPSIS
 
     # Simple usage
-    use Encode::Fix qw(fix_double);
+    use Encode::Repair qw(repair_double);
     binmode STDOUT, ':encoding(UTF-8)';
 
     # prints: small ae: ä
-    print fix_double("small ae: \xc3\x83\xc2\xa4\n");
+    print repair_double("small ae: \xc3\x83\xc2\xa4\n");
 
     # prints: beta: β
-    print fix_double("beta: \xc4\xaa\xc2\xb2\n", {via => 'Latin-7'});
+    print repair_double("beta: \xc4\xaa\xc2\xb2\n", {via => 'Latin-7'});
 
 
     # Advanced usage
     # assumes you have a sample text both correctly decoded in a
     # character string, and as a wrongly encoded buffer
-    use Encode::Fix qw(fix_encoding learn_recoding);
+
+    use Encode::Repair qw(repair_encoding learn_recoding);
     use charnames qw(:full);
     binmode STDOUT, ':encoding(UTF-8)';
 
-    my $recoding_pattern  = Encode::Fix::learn_recoding(
+    my $recoding_pattern  = learn_recoding(
         from        => "beta: \xc4\xaa\xc2\xb2",
         to          => "beta: \N{GREEK SMALL LETTER BETA}",
         encodings   => ['UTF-8', 'Latin-1', 'Latin-7'],
     );
     my $mojibake = "\304\252\302\273\304\252\302\261\304\252\302"
                   ."\274\304\252\342\200\234\304\252\302\261";
-    print fix_encoding($mojibake, $recoding_pattern), "\n";
+    print repair_encoding($mojibake, $recoding_pattern), "\n";
 
 
 =head1 DESCRIPTION
@@ -103,7 +104,7 @@ It covers the rather common case that a program assumes a wrong character
 encoding on reading some input, and converts it to Mojibake (see
 L<http://en.wikipedia.org/wiki/Mojibake>).
 
-If you use this modul on a regular basis, it most likely indicates that
+If you use this module on a regular basis, it most likely indicates that
 something is wrong in your processs. It should only be used for one-time tasks
 such as migrating a database to a new system.
 
@@ -111,13 +112,13 @@ such as migrating a database to a new system.
 
 =over
 
-=item fix_double
+=item repair_double
 
 Fixes the common case when a UTF-8 string was read as another encoding,
 and was encoded as UTF-8 again. The other encoding defaults to ISO-8859-1 aka
 Latin-1, and can be overridden with the C<via> option:
 
-    my $fixed = fix_double($buffer, {via => 'ISO-8859-2' });
+    my $repaired = repair_double($buffer, {via => 'ISO-8859-2' });
 
 It expects an octet string as input, and returns a decoded character string.
 
@@ -140,19 +141,19 @@ know these, try it with C<UTF-8>, C<ISO-8859-1> and the encoding that your
 system uses by default.
 
 C<depth> is the maximal number of encoding and decoding steps to be tried. For
-example C<fix_double> needs three steps. Defaults to 5; higher values might
+example C<repair_double> needs three steps. Defaults to 5; higher values might
 slow down the program significantly, although smaller depths are tried first.
 
 The return value is C<undef> on failure, and an array reference otherwise. It
-returns the encoding/decoding steps suitable for feeding into C<fix_encoding>.
+returns the encoding/decoding steps suitable for feeding into C<repair_encoding>.
 It contains a list of even size, where elements with even indexes are either
 C<'encode'> or C<'decode'>, and those with odd indexes contain the name of the
 encoding.
 
-=item fix_encoding
+=item repair_encoding
 
 Takes an input string and an encoding/decoding pattern (as returned from
-C<learn_recoding>) as input and returns the fixed string.
+C<learn_recoding>) as input and returns the repaired string.
 
 =back
 
@@ -163,7 +164,7 @@ value (for example to 7). If that doesn't help, check that the two input
 strings actually corespond. C<learn_recoding> does an exact equality check, so
 trailing newline characters or spaces will cause it to fail.
 
-If C<fix_encoding> produces errors or warnings, it is likely that the sample
+If C<repair_encoding> produces errors or warnings, it is likely that the sample
 you used for learning was not long enough, or not representative. For example
 if your system uses both ISO-8859-1 and ISO-8859-15 (which are quite similar),
 C<learn_recoding> uses the first match, so the sample data has to contain at
@@ -199,7 +200,7 @@ The source code is stored in a public git repository at
 L<http://github.com/moritz/Encode-Fix>. If you find any bugs, please used the
 issue tracker linked from this site.
 
-If you find a case of messed-up encodings that can be fixed deterministically
+If you find a case of messed-up encodings that can be repaired deterministically
 and that's not covered by this module, please contact the author, providing a
 hex dump of both input and output, and as much information of the encoding and
 decoding process as you have.
