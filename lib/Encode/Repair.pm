@@ -197,7 +197,7 @@ FOR A PARTICULAR PURPOSE.
 =head1 Development
 
 The source code is stored in a public git repository at
-L<http://github.com/moritz/Encode-Fix>. If you find any bugs, please used the
+L<http://github.com/moritz/Encode-Repair>. If you find any bugs, please used the
 issue tracker linked from this site.
 
 If you find a case of messed-up encodings that can be repaired deterministically
