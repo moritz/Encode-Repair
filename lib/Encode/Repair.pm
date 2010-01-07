@@ -114,7 +114,7 @@ such as migrating a database to a new system.
 
 =item repair_double
 
-Fixes the common case when a UTF-8 string was read as another encoding,
+Repairs the common case when a UTF-8 string was read as another encoding,
 and was encoded as UTF-8 again. The other encoding defaults to ISO-8859-1 aka
 Latin-1, and can be overridden with the C<via> option:
 
@@ -190,7 +190,7 @@ as published by The Perl Foundation.
 The code examples distributed with this package are an exception, and may be
 used, modified and redistributed without any limitations.
 
-Encode::Fix is distributed in the hope that it will be useful, but WITHOUT
+Encode::Repair is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE.
 
