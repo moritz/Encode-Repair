@@ -176,7 +176,7 @@ This document tries to stick to the terminology introduced in the L<Encode>
 module.
 
 If you want to learn more about the way text is encoded and how perl handles
-that, take a look at L<http://perlgeek/en/article/encodings-and-unicode>.
+that, take a look at L<http://perlgeek.de/en/article/encodings-and-unicode>.
 
 =head1 LICENSE AND COPYRIGHT
 
