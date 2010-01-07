@@ -64,6 +64,7 @@ Encode::Fix - Repair wrongly encoded text strings
 
 =head1 SYNOPSIS
 
+    # Simple usage
     use Encode::Fix qw(fix_double);
     binmode STDOUT, ':encoding(UTF-8)';
 
@@ -72,6 +73,24 @@ Encode::Fix - Repair wrongly encoded text strings
 
     # prints: beta: β
     print fix_double("beta: \xc4\xaa\xc2\xb2\n", {via => 'Latin-7'});
+
+
+    # Advanced usage
+    # assumes you have a sample text both correctly decoded in a
+    # character string, and as a wrongly encoded buffer
+    use Encode::Fix qw(fix_encoding learn_recoding);
+    use charnames qw(:full);
+    binmode STDOUT, ':encoding(UTF-8)';
+
+    my $recoding_pattern  = Encode::Fix::learn_recoding(
+        from        => "beta: \xc4\xaa\xc2\xb2",
+        to          => "beta: \N{GREEK SMALL LETTER BETA}",
+        encodings   => ['UTF-8', 'Latin-1', 'Latin-7'],
+    );
+    my $mojibake = "\304\252\302\273\304\252\302\261\304\252\302"
+                  ."\274\304\252\342\200\234\304\252\302\261";
+    print fix_encoding($mojibake, $recoding_pattern), "\n";
+
 
 =head1 DESCRIPTION
 
@@ -101,7 +120,54 @@ Latin-1, and can be overridden with the C<via> option:
 
 It expects an octet string as input, and returns a decoded character string.
 
+=item learn_recoding
+
+Given a sample of text twice, once correctly decoded and once mistreated,
+attemps to find a sequence of encoding and decoding that turns the mistreated
+text into the correct form.
+
+    my $coding_pattern = learn_recoding(
+        from        => $mistreated_buffer,
+        to          => $correct_string,
+        encodings   => \@involved_encodings,
+        depth       => 5,
+    );
+
+C<encodings> should be an array reference containing all the character
+encodings involved in the process that messes up the encoding. If you don't
+know these, try it with C<UTF-8>, C<ISO-8859-1> and the encoding that your
+system uses by default.
+
+C<depth> is the maximal number of encoding and decoding steps to be tried. For
+example C<fix_double> needs three steps. Defaults to 5; higher values might
+slow down the program significantly, although smaller depths are tried first.
+
+The return value is C<undef> on failure, and an array reference otherwise. It
+returns the encoding/decoding steps suitable for feeding into C<fix_encoding>.
+It contains a list of even size, where elements with even indexes are either
+C<'encode'> or C<'decode'>, and those with odd indexes contain the name of the
+encoding.
+
+=item fix_encoding
+
+Takes an input string and an encoding/decoding pattern (as returned from
+C<learn_recoding>) as input and returns the fixed string.
+
 =back
+
+=head1 Troubleshooting
+
+If C<learn_recoding> returns C<undef>, you can increase the C<depth> option
+value (for example to 7). If that doesn't help, check that the two input
+strings actually corespond. C<learn_recoding> does an exact equality check, so
+trailing newline characters or spaces will cause it to fail.
+
+If C<fix_encoding> produces errors or warnings, it is likely that the sample
+you used for learning was not long enough, or not representative. For example
+if your system uses both ISO-8859-1 and ISO-8859-15 (which are quite similar),
+C<learn_recoding> uses the first match, so the sample data has to contain at
+least one character that's in ISO-8859-15 but not in ISO-8859-1, like the
+Euro sign (€).
 
 =head1 Further Reading
 
