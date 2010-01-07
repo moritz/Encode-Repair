@@ -43,7 +43,7 @@ $res = Encode::Fix::learn_recoding(
 );
 
 is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-7', 'decode', 'UTF-8'],
-          'Can detect double encoding via Latin-1';
+          'Can detect double encoding via Latin-7';
 is Encode::Fix::fix_encoding("beta: \xc4\xaa\xc2\xb2", $res),
    "beta: \N{GREEK SMALL LETTER BETA}",
     'Can fix double encoding via Latin-7 with autodetection';
