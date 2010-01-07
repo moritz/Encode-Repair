@@ -41,6 +41,7 @@ sub learn_recoding {
     my $target      = $args{to};
     my $encodings   = $args{encodings};
     my $maxdepth    = $args{depth} || 5;
+    return [] if $source eq $target;
 
     for my $depth (1..$maxdepth) {
         my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
