@@ -41,16 +41,23 @@ sub learn_recoding {
     my $target      = $args{to};
     my $encodings   = $args{encodings};
     my $maxdepth    = $args{depth} || 5;
+    my $search_mode = $args{search} || 'first';
     return [] if $source eq $target;
 
+    my @result;
     for my $depth (1..$maxdepth) {
         my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
         while (my @steps = $iter->()) {
             no warnings 'uninitialized';
             if (eval {repair_encoding($source, \@steps)} eq $target) {
-                return \@steps;
+                if (lc($search_mode) eq 'first') {
+                    return \@steps;
+                } else {
+                    push @result, \@steps;
+                }
             }
         }
+        return \@result if @result && lc($search_mode) eq 'multiple';
     }
     return;
 }

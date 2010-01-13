@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 8;
 use Encode qw(encode);
 
 use charnames qw(:full);
@@ -36,11 +36,28 @@ $res = learn_recoding(
         encodings   => ['UTF-8', 'Latin-1', 'Latin-7'],
 );
 
-#is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-1', 'decode', 'UTF-8'], 
+#is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-1', 'decode', 'UTF-8'],
 #          'Can detect double encoding via Latin-1';
+
+
 is repair_encoding("small ae: \xc3\x83\xc2\xa4", $res),
     "small ae: \N{LATIN SMALL LETTER A WITH DIAERESIS}",
     'Can repair double encoding via Latin-1 with autodetection';
+
+TODO: {
+    local $TODO = 'depends on forced alternate encoding/decoding';
+    $res = learn_recoding(
+            from        => "small ae: \xc3\x83\xc2\xa4",
+            to          => "small ae: \N{LATIN SMALL LETTER A WITH DIAERESIS}",
+            encodings   => ['UTF-8', 'Latin-1', 'ISO-8859-15'],
+            search      => 'multiple',
+    );
+    # use Data::Dumper;
+    # print Dumper $res;
+    cmp_ok scalar(@$res), '>=', 2,
+        'Found at least two ways to repair double-encoded UTF-8'
+                . 'via ISO-8859-{1,15}';
+};
 
 $res = learn_recoding(
         from        => "beta: \xc4\xaa\xc2\xb2",
