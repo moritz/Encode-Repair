@@ -1,4 +1,7 @@
 Version 0.0.2
     * POD updates; remove fallout from renaming
+    * learn_recoding forces strict alternating encode/decode pattern
+    * configurable search criterion
+    * acknowledgements
 Version 0.0.1 2010-01-07
     * initial release
