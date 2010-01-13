@@ -133,6 +133,12 @@ If you use this module on a regular basis, it most likely indicates that
 something is wrong in your processs. It should only be used for one-time tasks
 such as migrating a database to a new system.
 
+
+A note on character encoding names: C<Encode::Repair> passes all encoding
+names to the L<Encode> core module, so it works with all encodings that
+L<Encode> understands. For example both C<'ISO-8859-1'> and C<Latin-1'> are
+OK.
+
 =head1 FUNCTIONS
 
 =over
@@ -248,5 +254,30 @@ hex dump of both input and output, and as much information of the encoding and
 decoding process as you have.
 
 Patches are also very welcome.
+
+=head1 ACKNOWLEDGEMENTS
+
+The following people deserve praise for helping with development in one way or
+another:
+
+=over
+
+=item Bart Lateur
+
+for suggesting the name C<Encode::Repair> and helpful discussion
+
+=item Max Maischein
+
+for helpful discussion
+
+=item Lars Dɪᴇᴄᴋᴏᴡ 迪拉斯
+
+for the suggestion to search for multiple recoding sequences
+
+=back
+
+Also special thanks go to the poeple behind Perl, CPAN and L<Encode>: Larry
+Wall, Jarko Hietaniemi, Andreas König, Nick Ing-Simmons, Dan Kogai and many
+more.
 
 =cut
