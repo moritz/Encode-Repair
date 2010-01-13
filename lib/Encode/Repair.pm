@@ -1,12 +1,19 @@
 package Encode::Repair;
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.2';
 use strict;
 use warnings;
 
 our @EXPORT_OK = qw(repair_double learn_recoding repair_encoding);
 use Exporter qw(import);
 use Encode qw(encode decode);
-use Algorithm::Loops qw(NestedLoops);
+use Algorithm::Loops qw(NestedLoops MapCar);
+
+# since Algorithm::Loops already provides MapCar, it is very easy to implement
+# zip() with it, instead of introducing another dependency (on
+# List::MoreUtils, specifically)
+sub zip {
+    MapCar {  @_ == 2 ? @_ : () } @_;
+}
 
 my %subs = (
     encode  => \&encode,
@@ -46,19 +53,26 @@ sub learn_recoding {
 
     my @result;
     for my $depth (1..$maxdepth) {
-        my $iter = NestedLoops( [([qw(encode decode)], $encodings) x $depth]);
+        my $iter = NestedLoops( [($encodings) x $depth] );
+        my @ed   =  (qw(encode decode)) x (int($depth / 2) + 1);
+        my @de   =  (qw(decode encode)) x (int($depth / 2) + 1);
         while (my @steps = $iter->()) {
             no warnings 'uninitialized';
-            if (eval {repair_encoding($source, \@steps)} eq $target) {
-                if (lc($search_mode) eq 'first') {
-                    return \@steps;
-                } else {
-                    push @result, \@steps;
+            for my $steps ([zip \@ed, \@steps], [zip \@de, \@steps]) {
+#                use Data::Dumper;
+#                warn Dumper($steps);
+                if (eval {repair_encoding($source, $steps)} eq $target) {
+                    if (lc($search_mode) eq 'first') {
+                        return $steps;
+                    } else {
+                        push @result, $steps;
+                    }
                 }
             }
         }
-        return \@result if @result && lc($search_mode) eq 'multiple';
+        return \@result if @result && lc($search_mode) eq 'shallow';
     }
+    return \@result if @result;
     return;
 }
 
@@ -96,9 +110,13 @@ Encode::Repair - Repair wrongly encoded text strings
         to          => "beta: \N{GREEK SMALL LETTER BETA}",
         encodings   => ['UTF-8', 'Latin-1', 'Latin-7'],
     );
-    my $mojibake = "\304\252\302\273\304\252\302\261\304\252\302"
-                  ."\274\304\252\342\200\234\304\252\302\261";
-    print repair_encoding($mojibake, $recoding_pattern), "\n";
+    if ($recoding_pattern) {
+        my $mojibake = "\304\252\302\273\304\252\302\261\304\252\302"
+                    ."\274\304\252\342\200\234\304\252\302\261";
+        print repair_encoding($mojibake, $recoding_pattern), "\n";
+    } else {
+        print "Sorry, could not help you :-(\n";
+    }
 
 
 =head1 DESCRIPTION
@@ -140,6 +158,7 @@ text into the correct form.
         to          => $correct_string,
         encodings   => \@involved_encodings,
         depth       => 5,
+        search      => 'first',
     );
 
 C<encodings> should be an array reference containing all the character
@@ -156,6 +175,22 @@ returns the encoding/decoding steps suitable for feeding into C<repair_encoding>
 It contains a list of even size, where elements with even indexes are either
 C<'encode'> or C<'decode'>, and those with odd indexes contain the name of the
 encoding.
+
+With C<search> you can adjust how long the function searches for a recoding
+sequence.
+WIth the default of C<'first'> it returns the first possible sequence. With
+C<'shallow'> it searches for the first working sequence and all other
+sequences of the same length, and then returns an array reference containing
+array references to all sequences. With the value C<'all'>, all possible
+sequences are searched and returned, but often that's a very bad idea, because
+it also finds sequences where parts of the sequence undo the work of other
+sequences (something like C<[qw(encode latin-1 decode latin-1)]>).
+
+Since Version 0.0.2 C<learn_recoding> forces strict pattern of alternatining
+encoding and decoding. So even if C<['decode', 'UTF-8', 'decode', 'UTF-8']> is
+a working input, C<learn_recoding> will return C<['decode', 'UTF-8', 'encode',
+'Latin-1', 'decode', 'UTF-8']> instead. So you might have to include C<Latin-1>
+in your encoding list even if it is not strictly involved.
 
 =item repair_encoding
 

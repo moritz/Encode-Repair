@@ -45,18 +45,14 @@ is repair_encoding("small ae: \xc3\x83\xc2\xa4", $res),
     'Can repair double encoding via Latin-1 with autodetection';
 
 TODO: {
-    local $TODO = 'depends on forced alternate encoding/decoding';
     $res = learn_recoding(
-            from        => "small ae: \xc3\x83\xc2\xa4",
-            to          => "small ae: \N{LATIN SMALL LETTER A WITH DIAERESIS}",
-            encodings   => ['UTF-8', 'Latin-1', 'ISO-8859-15'],
-            search      => 'multiple',
+            from        => encode('UTF-8', $str),
+            to          => $str,
+            encodings   => ['UTF-8', 'UTF-8'],
+            search      => 'shallow',
     );
-    # use Data::Dumper;
-    # print Dumper $res;
     cmp_ok scalar(@$res), '>=', 2,
-        'Found at least two ways to repair double-encoded UTF-8'
-                . 'via ISO-8859-{1,15}';
+        'Found at least two ways to decode UTF-8 when UTF-8 is provided twice';
 };
 
 $res = learn_recoding(
@@ -70,3 +66,5 @@ is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-7', 'decode', 'UTF-8'],
 is repair_encoding("beta: \xc4\xaa\xc2\xb2", $res),
    "beta: \N{GREEK SMALL LETTER BETA}",
     'Can repair double encoding via Latin-7 with autodetection';
+
+# vim: ts=4 sw=4 expandtab tw=80
